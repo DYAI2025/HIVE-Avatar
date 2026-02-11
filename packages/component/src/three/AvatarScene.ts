@@ -42,6 +42,17 @@ export class AvatarScene {
     this.camera.lookAt(0, 1.3, 0);
 
     this.setupLighting();
+
+    // Verify GPU can actually render by drawing a test frame and reading pixels
+    this.renderer.render(this.scene, this.camera);
+    const gl = this.renderer.getContext();
+    const pixel = new Uint8Array(4);
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+    if (gl.getError() !== gl.NO_ERROR) {
+      this.renderer.dispose();
+      throw new Error("WebGL render test failed — GPU sandbox is blocking rendering. Use 2D mode.");
+    }
+
     this.idleAnimator = new IdleAnimator();
   }
 

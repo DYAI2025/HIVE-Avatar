@@ -7,6 +7,7 @@ export interface AvatarViewProps {
   avatarUrl: string;
   width?: number;
   height?: number;
+  force2d?: boolean;
   onStateChange?: (state: AvatarState) => void;
   onError?: (error: string) => void;
   onReady?: () => void;
@@ -32,6 +33,7 @@ export function AvatarView({
   avatarUrl,
   width = 640,
   height = 480,
+  force2d = false,
   onStateChange,
   onError,
   onReady,
@@ -45,7 +47,7 @@ export function AvatarView({
   const { state, setState, loaded, error: sceneError, initScene, loadAvatar, queueAudio } =
     useAvatar(canvasRef);
 
-  const is2D = !!sceneError;
+  const is2D = force2d || !!sceneError;
 
   // Notify parent of state changes
   useEffect(() => {
@@ -95,14 +97,14 @@ export function AvatarView({
 
   // Init Three.js scene (will set sceneError if WebGL fails)
   useEffect(() => {
-    initScene(width, height);
-  }, [initScene, width, height]);
+    if (!force2d) initScene(width, height);
+  }, [force2d, initScene, width, height]);
 
-  // Load avatar model (skip if scene failed to init)
+  // Load avatar model (skip if 2D or scene failed)
   useEffect(() => {
-    if (loaded || sceneError) return;
+    if (loaded || is2D) return;
     loadAvatar(avatarUrl).then(() => onReady?.());
-  }, [avatarUrl, loaded, sceneError, loadAvatar, onReady]);
+  }, [avatarUrl, loaded, is2D, loadAvatar, onReady]);
 
   // In 2D mode, mark as ready immediately
   useEffect(() => {
