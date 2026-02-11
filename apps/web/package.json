@@ -1,0 +1,13 @@
+{
+  "name": "@dyai/avatar-web",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@dyai/avatar-component": "workspace:*",
+    "@dyai/avatar-shared": "workspace:*"
+  },
+  "scripts": {
+    "dev": "echo 'web app - to be configured'",
+    "build": "echo 'web app - to be configured'"
+  }
+}
