@@ -6,12 +6,19 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "oxlint .",
-    "format": "oxfmt --write ."
+    "format": "oxfmt --write .",
+    "dev:server": "pnpm --filter @dyai/avatar-server dev",
+    "dev:web": "pnpm --filter @dyai/avatar-web dev",
+    "dev:all": "pnpm dev:server & pnpm dev:web",
+    "start:server": "pnpm --filter @dyai/avatar-server start"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
     "vitest": "^3.0.0",
     "oxlint": "^0.16.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
   },
   "engines": {
     "node": ">=22.0.0",
