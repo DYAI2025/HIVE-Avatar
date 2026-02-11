@@ -13,6 +13,20 @@ export interface AvatarViewProps {
   className?: string;
 }
 
+const STATE_COLORS: Record<AvatarState, string> = {
+  idle: "#3b82f6",
+  listening: "#ef4444",
+  thinking: "#f59e0b",
+  speaking: "#22c55e",
+};
+
+const STATE_LABELS: Record<AvatarState, string> = {
+  idle: "Ready",
+  listening: "Listening...",
+  thinking: "Thinking...",
+  speaking: "Speaking...",
+};
+
 export function AvatarView({
   serverUrl,
   avatarUrl,
@@ -30,6 +44,8 @@ export function AvatarView({
 
   const { state, setState, loaded, error: sceneError, initScene, loadAvatar, queueAudio } =
     useAvatar(canvasRef);
+
+  const is2D = !!sceneError;
 
   // Notify parent of state changes
   useEffect(() => {
@@ -77,7 +93,7 @@ export function AvatarView({
     onBinaryMessage: handleBinary,
   });
 
-  // Init Three.js scene
+  // Init Three.js scene (will set sceneError if WebGL fails)
   useEffect(() => {
     initScene(width, height);
   }, [initScene, width, height]);
@@ -87,6 +103,11 @@ export function AvatarView({
     if (loaded || sceneError) return;
     loadAvatar(avatarUrl).then(() => onReady?.());
   }, [avatarUrl, loaded, sceneError, loadAvatar, onReady]);
+
+  // In 2D mode, mark as ready immediately
+  useEffect(() => {
+    if (is2D && connected) onReady?.();
+  }, [is2D, connected, onReady]);
 
   // Push-to-Talk handlers
   const startRecording = useCallback(async () => {
@@ -124,38 +145,154 @@ export function AvatarView({
     mediaRecorderRef.current = null;
   }, []);
 
-  // Report scene errors to parent
-  useEffect(() => {
-    if (sceneError) onError?.(sceneError);
-  }, [sceneError, onError]);
+  const pttDisabled = !connected || (!is2D && !loaded) || state === "thinking" || state === "speaking";
+  const stateColor = STATE_COLORS[state];
 
-  if (sceneError) {
+  // ---------- 2D Fallback Mode ----------
+  if (is2D) {
+    const pulseRing = state === "speaking" || state === "listening";
+
     return (
       <div
         className={className}
         style={{
+          position: "relative",
           width,
           height,
+          background: "linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #16213e 100%)",
+          borderRadius: 12,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "#1a1a2e",
-          color: "#e0e0e0",
-          padding: 24,
-          textAlign: "center",
-          fontFamily: "system-ui, sans-serif",
-          borderRadius: 8,
+          fontFamily: "system-ui, -apple-system, sans-serif",
+          overflow: "hidden",
+          userSelect: "none",
         }}
       >
-        <div>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>&#x1F3AD;</div>
-          <div style={{ fontSize: 14, marginBottom: 8, fontWeight: 600 }}>WebGL Not Available</div>
-          <div style={{ fontSize: 12, opacity: 0.7 }}>{sceneError}</div>
+        {/* Connection indicator */}
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: connected ? "#22c55e" : "#ef4444",
+              boxShadow: connected ? "0 0 8px #22c55e80" : "0 0 8px #ef444480",
+            }}
+          />
+          <span style={{ color: "#888", fontSize: 11 }}>
+            {connected ? "Connected" : "Disconnected"}
+          </span>
         </div>
+
+        {/* Avatar circle */}
+        <div style={{ position: "relative", marginBottom: 24 }}>
+          {/* Pulse ring */}
+          {pulseRing && (
+            <div
+              style={{
+                position: "absolute",
+                inset: -12,
+                borderRadius: "50%",
+                border: `2px solid ${stateColor}60`,
+                animation: "avatar-pulse 1.5s ease-in-out infinite",
+              }}
+            />
+          )}
+          <div
+            style={{
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              background: `linear-gradient(135deg, ${stateColor}40 0%, ${stateColor}20 100%)`,
+              border: `3px solid ${stateColor}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 48,
+              transition: "border-color 0.3s, background 0.3s",
+              boxShadow: `0 0 30px ${stateColor}30`,
+            }}
+          >
+            {state === "listening"
+              ? "\uD83D\uDD34"
+              : state === "thinking"
+                ? "\uD83E\uDD14"
+                : state === "speaking"
+                  ? "\uD83D\uDDE3\uFE0F"
+                  : "\uD83E\uDD16"}
+          </div>
+        </div>
+
+        {/* Status */}
+        <div
+          style={{
+            color: stateColor,
+            fontSize: 14,
+            fontWeight: 600,
+            marginBottom: 8,
+            transition: "color 0.3s",
+          }}
+        >
+          {STATE_LABELS[state]}
+        </div>
+
+        <div style={{ color: "#666", fontSize: 11, marginBottom: 32 }}>
+          2D Mode — Hold button to speak
+        </div>
+
+        {/* PTT Button */}
+        <button
+          onPointerDown={startRecording}
+          onPointerUp={stopRecording}
+          onPointerLeave={stopRecording}
+          disabled={pttDisabled}
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: "50%",
+            border: "none",
+            cursor: pttDisabled ? "not-allowed" : "pointer",
+            background: state === "listening"
+              ? "#ef4444"
+              : state === "thinking"
+                ? "#f59e0b"
+                : "#3b82f6",
+            color: "white",
+            fontSize: 28,
+            opacity: pttDisabled ? 0.4 : 1,
+            transition: "background 0.2s, opacity 0.2s, transform 0.1s",
+            transform: state === "listening" ? "scale(1.1)" : "scale(1)",
+            boxShadow: state === "listening"
+              ? "0 0 20px #ef444480"
+              : "0 4px 12px rgba(0,0,0,0.3)",
+          }}
+        >
+          {state === "listening" ? "\u25CF" : state === "thinking" ? "\u2026" : "\uD83C\uDFA4"}
+        </button>
+
+        {/* CSS animation */}
+        <style>{`
+          @keyframes avatar-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 0; }
+          }
+        `}</style>
       </div>
     );
   }
 
+  // ---------- 3D WebGL Mode ----------
   return (
     <div className={className} style={{ position: "relative", width, height }}>
       <canvas ref={canvasRef} width={width} height={height} />
@@ -178,7 +315,7 @@ export function AvatarView({
         onPointerDown={startRecording}
         onPointerUp={stopRecording}
         onPointerLeave={stopRecording}
-        disabled={!connected || !loaded || state === "thinking" || state === "speaking"}
+        disabled={pttDisabled}
         style={{
           position: "absolute",
           bottom: 16,
@@ -197,10 +334,10 @@ export function AvatarView({
                 : "#3b82f6",
           color: "white",
           fontSize: 24,
-          opacity: !connected || !loaded ? 0.5 : 1,
+          opacity: pttDisabled ? 0.5 : 1,
         }}
       >
-        {state === "listening" ? "\u25cf" : state === "thinking" ? "\u2026" : "\ud83c\udfa4"}
+        {state === "listening" ? "\u25CF" : state === "thinking" ? "\u2026" : "\uD83C\uDFA4"}
       </button>
     </div>
   );
