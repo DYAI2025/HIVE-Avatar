@@ -64,3 +64,5 @@ export const RHUBARB_TO_ARKIT: Record<string, Record<string, number>> = {
   G: { jawOpen: 0.1, mouthFunnel: 0.5, mouthClose: 0.3 },
   H: { jawOpen: 0.3, mouthOpen: 0.4 },
 };
+
+export { mapRhubarbToVisemes, interpolateVisemes } from "./viseme-mapper.js";
