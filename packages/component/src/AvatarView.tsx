@@ -28,7 +28,7 @@ export function AvatarView({
   const chunksRef = useRef<Blob[]>([]);
   const pendingVisemesRef = useRef<any>(null);
 
-  const { state, setState, loaded, initScene, loadAvatar, queueAudio } =
+  const { state, setState, loaded, error: sceneError, initScene, loadAvatar, queueAudio } =
     useAvatar(canvasRef);
 
   // Notify parent of state changes
@@ -123,6 +123,38 @@ export function AvatarView({
     mediaRecorderRef.current?.stop();
     mediaRecorderRef.current = null;
   }, []);
+
+  // Report scene errors to parent
+  useEffect(() => {
+    if (sceneError) onError?.(sceneError);
+  }, [sceneError, onError]);
+
+  if (sceneError) {
+    return (
+      <div
+        className={className}
+        style={{
+          width,
+          height,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#1a1a2e",
+          color: "#e0e0e0",
+          padding: 24,
+          textAlign: "center",
+          fontFamily: "system-ui, sans-serif",
+          borderRadius: 8,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>&#x1F3AD;</div>
+          <div style={{ fontSize: 14, marginBottom: 8, fontWeight: 600 }}>WebGL Not Available</div>
+          <div style={{ fontSize: 12, opacity: 0.7 }}>{sceneError}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={className} style={{ position: "relative", width, height }}>

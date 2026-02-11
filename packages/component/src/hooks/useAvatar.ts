@@ -8,6 +8,7 @@ export function useAvatar(canvasRef: React.RefObject<HTMLCanvasElement | null>) 
   const sceneRef = useRef<AvatarScene | null>(null);
   const [state, setState] = useState<AvatarState>("idle");
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Audio playback
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -19,7 +20,11 @@ export function useAvatar(canvasRef: React.RefObject<HTMLCanvasElement | null>) 
   const initScene = useCallback(
     (width: number, height: number) => {
       if (!canvasRef.current || sceneRef.current) return;
-      sceneRef.current = new AvatarScene(canvasRef.current, width, height);
+      try {
+        sceneRef.current = new AvatarScene(canvasRef.current, width, height);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to initialize 3D scene");
+      }
     },
     [canvasRef],
   );
@@ -99,6 +104,7 @@ export function useAvatar(canvasRef: React.RefObject<HTMLCanvasElement | null>) 
     state,
     setState,
     loaded,
+    error,
     initScene,
     loadAvatar,
     queueAudio,

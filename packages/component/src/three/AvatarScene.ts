@@ -12,7 +12,25 @@ export class AvatarScene {
   private clock = new THREE.Clock();
 
   constructor(canvas: HTMLCanvasElement, width: number, height: number) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    // Try with default settings, fall back to software rendering
+    try {
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    } catch {
+      // Retry without antialias and with failIfMajorPerformanceCaveat disabled
+      try {
+        this.renderer = new THREE.WebGLRenderer({
+          canvas,
+          antialias: false,
+          alpha: true,
+          failIfMajorPerformanceCaveat: false,
+          powerPreference: "default",
+        });
+      } catch (e) {
+        throw new Error(
+          "WebGL not available. Launch your browser with: --enable-webgl --ignore-gpu-blocklist --use-gl=angle",
+        );
+      }
+    }
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
