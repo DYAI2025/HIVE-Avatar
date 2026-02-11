@@ -82,11 +82,11 @@ export function AvatarView({
     initScene(width, height);
   }, [initScene, width, height]);
 
-  // Load avatar model
+  // Load avatar model (skip if scene failed to init)
   useEffect(() => {
-    if (loaded) return;
+    if (loaded || sceneError) return;
     loadAvatar(avatarUrl).then(() => onReady?.());
-  }, [avatarUrl, loaded, loadAvatar, onReady]);
+  }, [avatarUrl, loaded, sceneError, loadAvatar, onReady]);
 
   // Push-to-Talk handlers
   const startRecording = useCallback(async () => {
