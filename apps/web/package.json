@@ -2,12 +2,20 @@
   "name": "@dyai/avatar-web",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "dev": "next dev --port 3200",
+    "build": "next build",
+    "start": "next start --port 3200"
+  },
   "dependencies": {
     "@dyai/avatar-component": "workspace:*",
-    "@dyai/avatar-shared": "workspace:*"
+    "next": "^16.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
-  "scripts": {
-    "dev": "echo 'web app - to be configured'",
-    "build": "echo 'web app - to be configured'"
+  "devDependencies": {
+    "@types/node": "25.2.3",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0"
   }
 }
