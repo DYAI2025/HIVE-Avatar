@@ -3,12 +3,11 @@ import type { Message } from "@dyai/avatar-shared";
 
 export interface SelineConfig {
   baseUrl: string;
-  agentId?: string;
-  sessionId?: string;
+  characterId?: string;
 }
 
 export function createSelineAdapter(config: SelineConfig): AvatarBackend {
-  const { baseUrl, agentId, sessionId } = config;
+  const { baseUrl, characterId } = config;
 
   return {
     async transcribe(audio: Buffer): Promise<string> {
@@ -19,7 +18,7 @@ export function createSelineAdapter(config: SelineConfig): AvatarBackend {
         "audio.wav",
       );
 
-      const res = await fetch(`${baseUrl}/api/audio/transcribe`, {
+      const res = await fetch(`${baseUrl}/api/avatar/transcribe`, {
         method: "POST",
         body: formData,
       });
@@ -30,7 +29,7 @@ export function createSelineAdapter(config: SelineConfig): AvatarBackend {
     },
 
     async *chat(text: string, history: Message[]): AsyncIterable<string> {
-      const res = await fetch(`${baseUrl}/api/chat`, {
+      const res = await fetch(`${baseUrl}/api/avatar/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -41,8 +40,7 @@ export function createSelineAdapter(config: SelineConfig): AvatarBackend {
             })),
             { role: "user", content: text },
           ],
-          ...(agentId && { agentId }),
-          ...(sessionId && { sessionId }),
+          ...(characterId && { characterId }),
         }),
       });
 
@@ -56,23 +54,12 @@ export function createSelineAdapter(config: SelineConfig): AvatarBackend {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
-        // Parse Seline's streaming format (data-stream protocol)
-        for (const line of chunk.split("\n")) {
-          if (line.startsWith("0:")) {
-            // Text delta in Vercel AI SDK data stream
-            try {
-              const text = JSON.parse(line.slice(2));
-              if (typeof text === "string") yield text;
-            } catch {
-              // skip non-JSON lines
-            }
-          }
-        }
+        if (chunk) yield chunk;
       }
     },
 
     async synthesize(text: string): Promise<Buffer> {
-      const res = await fetch(`${baseUrl}/api/audio/synthesize`, {
+      const res = await fetch(`${baseUrl}/api/avatar/synthesize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),

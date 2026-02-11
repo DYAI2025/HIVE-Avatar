@@ -11,8 +11,9 @@ let backend;
 
 if (provider === "seline") {
   const baseUrl = process.env.SELINE_URL ?? "http://localhost:3000";
-  backend = createSelineAdapter({ baseUrl });
-  console.log(`Using Seline adapter → ${baseUrl}`);
+  const characterId = process.env.SELINE_CHARACTER_ID;
+  backend = createSelineAdapter({ baseUrl, characterId });
+  console.log(`Using Seline adapter → ${baseUrl}${characterId ? ` (character: ${characterId})` : ""}`);
 } else {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
