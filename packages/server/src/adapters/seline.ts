@@ -15,7 +15,7 @@ export function createSelineAdapter(config: SelineConfig): AvatarBackend {
       const formData = new FormData();
       formData.append(
         "file",
-        new Blob([audio], { type: "audio/wav" }),
+        new Blob([new Uint8Array(audio)], { type: "audio/wav" }),
         "audio.wav",
       );
 

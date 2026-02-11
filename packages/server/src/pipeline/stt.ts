@@ -5,7 +5,7 @@ export async function transcribe(
   client: OpenAI,
   wavAudio: Buffer,
 ): Promise<string> {
-  const file = new File([wavAudio], "audio.wav", { type: "audio/wav" });
+  const file = new File([new Uint8Array(wavAudio)], "audio.wav", { type: "audio/wav" });
 
   const response = await client.audio.transcriptions.create({
     model: "whisper-1",
